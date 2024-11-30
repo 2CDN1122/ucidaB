@@ -3,28 +3,43 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: php-apache-container
     ports:
       - "8080:80"
     volumes:
       - ./src:/var/www/html
+      - ./logs/apache:/var/log/apache2
     depends_on:
       - db
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=rootpassword
+      - MYSQL_DATABASE=app_db
 
   db:
     image: mysql:8.0
+    container_name: mysql-container
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: project_db
+      MYSQL_DATABASE: app_db
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
     ports:
       - "3306:3306"
-    
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    ports:
-      - "8081:80"  # phpMyAdmin のポートを8081に設定
+    container_name: phpmyadmin-container
     environment:
-      PMA_HOST: db  # phpMyAdmin が接続する MySQL コンテナの名前
-      PMA_USER: root
-      PMA_PASSWORD: rootpassword  # MySQLのrootパスワード
+      MYSQL_ROOT_PASSWORD: rootpassword
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - "8081:80"
     depends_on:
       - db
+
+volumes:
+  mysql-data:
